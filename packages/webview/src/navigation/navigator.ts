@@ -77,6 +77,26 @@ export class Navigator {
       return 'ingressesRoutes';
     } else if (kind === 'ConfigMap' || kind === 'Secret') {
       return 'configmapsSecrets';
+    } else if (kind === 'StorageClass') {
+      return 'storageclasses';
+    } else if (kind === 'IngressClass') {
+      return 'ingressclasses';
+    } else if (kind === 'RuntimeClass') {
+      return 'runtimeclasses';
+    } else if (kind === 'PriorityClass') {
+      return 'priorityclasses';
+    } else if (kind === 'NetworkPolicy') {
+      return 'networkpolicies';
+    } else if (kind === 'Endpoints') {
+      return 'endpoints';
+    } else if (kind === 'Event') {
+      return 'events';
+    } else if (kind === 'HTTPRoute') {
+      return 'httproutes';
+    } else if (kind === 'GatewayClass') {
+      return 'gatewayclasses';
+    } else if (kind === 'CustomResourceDefinition') {
+      return 'customresourcedefinitions';
     }
     // otherwise do the simple conversion
     return kind.toLowerCase() + 's';

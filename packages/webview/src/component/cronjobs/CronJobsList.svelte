@@ -9,14 +9,13 @@ import { DependencyAccessor } from '/@/inject/dependency-accessor';
 import KubernetesEmptyScreen from '/@/component/objects/KubernetesEmptyScreen.svelte';
 import ActionsColumn from '/@/component/cronjobs/columns/Actions.svelte';
 import ScheduleColumn from '/@/component/cronjobs/columns/Schedule.svelte';
+import SuspendedColumn from '/@/component/cronjobs/columns/Suspended.svelte';
 import { CronJobHelper } from './cronjob-helper';
 import type { CronJobUI } from './CronJobUI';
 import CronJobIcon from '/@/component/icons/CronJobIcon.svelte';
-import { KubernetesObjectUIHelper } from '/@/component/objects/kubernetes-object-ui-helper';
 
 const dependencyAccessor = getContext<DependencyAccessor>(DependencyAccessor);
 const cronjobHelper = dependencyAccessor.get<CronJobHelper>(CronJobHelper);
-const kubernetesObjectUIHelper = dependencyAccessor.get<KubernetesObjectUIHelper>(KubernetesObjectUIHelper);
 
 let statusColumn = new TableColumn<CronJobUI>('Status', {
   align: 'center',
@@ -43,9 +42,8 @@ let scheduleColumn = new TableColumn<CronJobUI, string>('Schedule', {
   comparator: (a, b): number => a.schedule.localeCompare(b.schedule),
 });
 
-let suspendColumn = new TableColumn<CronJobUI, string>('Suspended', {
-  renderMapping: (cronjob): string => kubernetesObjectUIHelper.capitalize(cronjob.suspended.toString()),
-  renderer: TableSimpleColumn,
+let suspendColumn = new TableColumn<CronJobUI>('Suspended', {
+  renderer: SuspendedColumn,
   comparator: (a, b): number => a.suspended.toString().localeCompare(b.suspended.toString()),
 });
 

@@ -73,6 +73,32 @@ import { ServicesResourceFactory } from '/@/resources/services-resource-factory.
 import { inject, injectable } from 'inversify';
 import { NamespacesResourceFactory } from '/@/resources/namespaces-resource-factory.js';
 import { EndpointSlicesResourceFactory } from '/@/resources/endpoint-slices-resource-factory.js';
+import { ResourceQuotasResourceFactory } from '/@/resources/resource-quotas-resource-factory.js';
+import { LimitRangesResourceFactory } from '/@/resources/limit-ranges-resource-factory.js';
+import { HpasResourceFactory } from '/@/resources/hpas-resource-factory.js';
+import { PdbsResourceFactory } from '/@/resources/pdbs-resource-factory.js';
+import { PriorityClassesResourceFactory } from '/@/resources/priority-classes-resource-factory.js';
+import { RuntimeClassesResourceFactory } from '/@/resources/runtime-classes-resource-factory.js';
+import { LeasesResourceFactory } from '/@/resources/leases-resource-factory.js';
+import { MutatingWebhooksResourceFactory } from '/@/resources/mutating-webhooks-resource-factory.js';
+import { ValidatingWebhooksResourceFactory } from '/@/resources/validating-webhooks-resource-factory.js';
+import { EndpointsResourceFactory } from '/@/resources/endpoints-resource-factory.js';
+import { IngressClassesResourceFactory } from '/@/resources/ingress-classes-resource-factory.js';
+import { NetworkPoliciesResourceFactory } from '/@/resources/network-policies-resource-factory.js';
+import { PVsResourceFactory } from '/@/resources/pvs-resource-factory.js';
+import { StorageClassesResourceFactory } from '/@/resources/storage-classes-resource-factory.js';
+import { ServiceAccountsResourceFactory } from '/@/resources/service-accounts-resource-factory.js';
+import { ClusterRolesResourceFactory } from '/@/resources/cluster-roles-resource-factory.js';
+import { RolesResourceFactory } from '/@/resources/roles-resource-factory.js';
+import { ClusterRoleBindingsResourceFactory } from '/@/resources/cluster-role-bindings-resource-factory.js';
+import { RoleBindingsResourceFactory } from '/@/resources/role-bindings-resource-factory.js';
+import { DaemonSetsResourceFactory } from '/@/resources/daemonsets-resource-factory.js';
+import { StatefulSetsResourceFactory } from '/@/resources/statefulsets-resource-factory.js';
+import { ReplicaSetsResourceFactory } from '/@/resources/replicasets-resource-factory.js';
+import { HttpRoutesResourceFactory } from '/@/resources/httproutes-resource-factory.js';
+import { GatewaysResourceFactory } from '/@/resources/gateways-resource-factory.js';
+import { GatewayClassesResourceFactory } from '/@/resources/gatewayclasses-resource-factory.js';
+import { CustomResourceDefinitionsResourceFactory } from '/@/resources/customresourcedefinitions-resource-factory.js';
 import { parseAllDocuments, stringify, type Tags } from 'yaml';
 import { writeFile } from 'node:fs/promises';
 import { ConnectOptions, ContextPermission, ResourceCount } from '@podman-desktop/kubernetes-dashboard-extension-api';
@@ -174,6 +200,32 @@ export class ContextsManager implements ContextsApi {
       new RoutesResourceFactory(this),
       new SecretsResourceFactory(),
       new ServicesResourceFactory(),
+      new ResourceQuotasResourceFactory(),
+      new LimitRangesResourceFactory(),
+      new HpasResourceFactory(),
+      new PdbsResourceFactory(),
+      new PriorityClassesResourceFactory(),
+      new RuntimeClassesResourceFactory(),
+      new LeasesResourceFactory(),
+      new MutatingWebhooksResourceFactory(),
+      new ValidatingWebhooksResourceFactory(),
+      new EndpointsResourceFactory(),
+      new IngressClassesResourceFactory(),
+      new NetworkPoliciesResourceFactory(),
+      new PVsResourceFactory(),
+      new StorageClassesResourceFactory(),
+      new ServiceAccountsResourceFactory(),
+      new ClusterRolesResourceFactory(),
+      new RolesResourceFactory(),
+      new ClusterRoleBindingsResourceFactory(),
+      new RoleBindingsResourceFactory(),
+      new DaemonSetsResourceFactory(),
+      new StatefulSetsResourceFactory(),
+      new ReplicaSetsResourceFactory(),
+      new HttpRoutesResourceFactory(),
+      new GatewaysResourceFactory(),
+      new GatewayClassesResourceFactory(),
+      new CustomResourceDefinitionsResourceFactory(),
     ];
   }
 

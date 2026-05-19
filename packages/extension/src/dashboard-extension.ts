@@ -30,6 +30,7 @@ import { InversifyBinding } from '/@/inject/inversify-binding';
 import type { Container } from 'inversify';
 import {
   API_CONTEXTS,
+  API_CUSTOM_RESOURCES,
   API_NAVIGATION,
   API_POD_LOGS,
   API_POD_TERMINALS,
@@ -62,6 +63,7 @@ import type {
 } from '@podman-desktop/kubernetes-dashboard-extension-api';
 import { ApiSubscriber } from '/@/subscriber/api-subscriber';
 import { TelemetryApiImpl } from './manager/telemetry-api';
+import { CustomResourcesApiImpl } from './manager/custom-resources-api-impl';
 
 export class DashboardExtension {
   #container: Container | undefined;
@@ -81,6 +83,7 @@ export class DashboardExtension {
   #kubernetesProvidersManager: KubernetesProvidersManager;
   #webviewSubscriber: ChannelSubscriber;
   #telemetryApiImpl: TelemetryApiImpl;
+  #customResourcesApiImpl: CustomResourcesApiImpl;
 
   constructor(readonly extensionContext: ExtensionContext) {
     this.#extensionContext = extensionContext;
@@ -112,6 +115,7 @@ export class DashboardExtension {
     this.#kubernetesProvidersManager = await this.#container.getAsync(KubernetesProvidersManager);
     this.#webviewSubscriber = await this.#container.getAsync(ChannelSubscriber);
     this.#telemetryApiImpl = await this.#container.getAsync(TelemetryApiImpl);
+    this.#customResourcesApiImpl = await this.#container.getAsync(CustomResourcesApiImpl);
 
     this.#kubernetesProvidersManager.init();
 
@@ -128,6 +132,7 @@ export class DashboardExtension {
     rpcExtension.registerInstance(API_NAVIGATION, this.#navigationApiImpl);
     rpcExtension.registerInstance(API_TELEMETRY, this.#telemetryApiImpl);
     rpcExtension.registerInstance(API_OPEN_DIALOG, this.#openDialogApiImpl);
+    rpcExtension.registerInstance(API_CUSTOM_RESOURCES, this.#customResourcesApiImpl);
 
     await this.listenMonitoring();
     await this.startMonitoring();

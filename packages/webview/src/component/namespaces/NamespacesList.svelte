@@ -12,6 +12,7 @@ import { NamespaceHelper } from './namespace-helper';
 import NamespaceIcon from '/@/component/icons/NamespaceIcon.svelte';
 import KubernetesEmptyScreen from '/@/component/objects/KubernetesEmptyScreen.svelte';
 import ActionsColumn from '/@/component/namespaces/columns/Actions.svelte';
+import PhaseColumn from '/@/component/namespaces/columns/Phase.svelte';
 
 const dependencyAccessor = getContext<DependencyAccessor>(DependencyAccessor);
 const namespaceHelper = dependencyAccessor.get<NamespaceHelper>(NamespaceHelper);
@@ -28,6 +29,11 @@ let nameColumn = new TableColumn<NamespaceUI>('Name', {
   comparator: (a, b): number => a.name.localeCompare(b.name),
 });
 
+let phaseColumn = new TableColumn<NamespaceUI>('Phase', {
+  renderer: PhaseColumn,
+  comparator: (a, b): number => a.phase.localeCompare(b.phase),
+});
+
 let ageColumn = new TableColumn<NamespaceUI, Date | undefined>('Age', {
   renderMapping: (namespace): Date | undefined => namespace.created,
   renderer: TableDurationColumn,
@@ -37,6 +43,7 @@ let ageColumn = new TableColumn<NamespaceUI, Date | undefined>('Age', {
 const columns = [
   statusColumn,
   nameColumn,
+  phaseColumn,
   ageColumn,
   new TableColumn<NamespaceUI>('Actions', { align: 'right', renderer: ActionsColumn }),
 ];

@@ -26,6 +26,66 @@ import CronJobDetails from './component/cronjobs/CronJobDetails.svelte';
 import PodDetails from './component/pods/PodDetails.svelte';
 import PortForwardingList from './component/port-forward/PortForwardingList.svelte';
 import KubeApplyYAML from './component/apply/KubeApplyYAML.svelte';
+
+import ResourceQuotasList from './component/resource-quotas/ResourceQuotasList.svelte';
+import ResourceQuotaDetails from './component/resource-quotas/ResourceQuotaDetails.svelte';
+import LimitRangesList from './component/limit-ranges/LimitRangesList.svelte';
+import LimitRangeDetails from './component/limit-ranges/LimitRangeDetails.svelte';
+import HpasList from './component/hpas/HpasList.svelte';
+import HpaDetails from './component/hpas/HpaDetails.svelte';
+import PdbsList from './component/pdbs/PdbsList.svelte';
+import PdbDetails from './component/pdbs/PdbDetails.svelte';
+import PriorityClassesList from './component/priority-classes/PriorityClassesList.svelte';
+import PriorityClassDetails from './component/priority-classes/PriorityClassDetails.svelte';
+import RuntimeClassesList from './component/runtime-classes/RuntimeClassesList.svelte';
+import RuntimeClassDetails from './component/runtime-classes/RuntimeClassDetails.svelte';
+import LeasesList from './component/leases/LeasesList.svelte';
+import LeaseDetails from './component/leases/LeaseDetails.svelte';
+import MutatingWebhooksList from './component/mutating-webhooks/MutatingWebhooksList.svelte';
+import MutatingWebhookDetails from './component/mutating-webhooks/MutatingWebhookDetails.svelte';
+import ValidatingWebhooksList from './component/validating-webhooks/ValidatingWebhooksList.svelte';
+import ValidatingWebhookDetails from './component/validating-webhooks/ValidatingWebhookDetails.svelte';
+import EndpointSlicesList from './component/endpoint-slices/EndpointSlicesList.svelte';
+import EndpointSliceDetails from './component/endpoint-slices/EndpointSliceDetails.svelte';
+import EndpointsList from './component/endpoints/EndpointsList.svelte';
+import EndpointDetails from './component/endpoints/EndpointDetails.svelte';
+import IngressClassesList from './component/ingress-classes/IngressClassesList.svelte';
+import IngressClassDetails from './component/ingress-classes/IngressClassDetails.svelte';
+import NetworkPoliciesList from './component/network-policies/NetworkPoliciesList.svelte';
+import NetworkPolicyDetails from './component/network-policies/NetworkPolicyDetails.svelte';
+import PvsList from './component/pvs/PvsList.svelte';
+import PvDetails from './component/pvs/PvDetails.svelte';
+import StorageClassesList from './component/storage-classes/StorageClassesList.svelte';
+import StorageClassDetails from './component/storage-classes/StorageClassDetails.svelte';
+import EventsStandaloneList from './component/events-standalone/EventsStandaloneList.svelte';
+import EventStandaloneDetails from './component/events-standalone/EventStandaloneDetails.svelte';
+import ServiceAccountsList from './component/service-accounts/ServiceAccountsList.svelte';
+import ServiceAccountDetails from './component/service-accounts/ServiceAccountDetails.svelte';
+import ClusterRolesList from './component/cluster-roles/ClusterRolesList.svelte';
+import ClusterRoleDetails from './component/cluster-roles/ClusterRoleDetails.svelte';
+import RolesList from './component/roles/RolesList.svelte';
+import RoleDetails from './component/roles/RoleDetails.svelte';
+import ClusterRoleBindingsList from './component/cluster-role-bindings/ClusterRoleBindingsList.svelte';
+import ClusterRoleBindingDetails from './component/cluster-role-bindings/ClusterRoleBindingDetails.svelte';
+import RoleBindingsList from './component/role-bindings/RoleBindingsList.svelte';
+import RoleBindingDetails from './component/role-bindings/RoleBindingDetails.svelte';
+import DaemonSetsList from './component/daemonsets/DaemonSetsList.svelte';
+import DaemonSetDetails from './component/daemonsets/DaemonSetDetails.svelte';
+import StatefulSetsList from './component/statefulsets/StatefulSetsList.svelte';
+import StatefulSetDetails from './component/statefulsets/StatefulSetDetails.svelte';
+import ReplicaSetsList from './component/replicasets/ReplicaSetsList.svelte';
+import ReplicaSetDetails from './component/replicasets/ReplicaSetDetails.svelte';
+import HttpRoutesList from './component/httproutes/HttpRoutesList.svelte';
+import HttpRouteDetails from './component/httproutes/HttpRouteDetails.svelte';
+import GatewaysList from './component/gateways/GatewaysList.svelte';
+import GatewayDetails from './component/gateways/GatewayDetails.svelte';
+import GatewayClassesList from './component/gatewayclasses/GatewayClassesList.svelte';
+import GatewayClassDetails from './component/gatewayclasses/GatewayClassDetails.svelte';
+import CustomResourceDefinitionsList from './component/crds/CustomResourceDefinitionsList.svelte';
+import CustomResourceDefinitionDetails from './component/crds/CustomResourceDefinitionDetails.svelte';
+import CustomResourceInstancesList from './component/custom-resources/CustomResourceInstancesList.svelte';
+import CustomResourceInstanceDetails from './component/custom-resources/CustomResourceInstanceDetails.svelte';
+
 // import globally the monaco environment
 import './monaco-environment';
 import type { TinroRouteMeta } from 'tinro';
@@ -138,5 +198,253 @@ const { meta }: Props = $props();
 
   <Route path="/applyYaml">
     <KubeApplyYAML />
+  </Route>
+
+  <!-- Config section resources -->
+  <Route path="/resourcequotas">
+    <ResourceQuotasList />
+  </Route>
+
+  <Route path="/resourcequotas/:name/:namespace/*" let:meta>
+    <ResourceQuotaDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/limitranges">
+    <LimitRangesList />
+  </Route>
+
+  <Route path="/limitranges/:name/:namespace/*" let:meta>
+    <LimitRangeDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/horizontalpodautoscalers">
+    <HpasList />
+  </Route>
+
+  <Route path="/horizontalpodautoscalers/:name/:namespace/*" let:meta>
+    <HpaDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/poddisruptionbudgets">
+    <PdbsList />
+  </Route>
+
+  <Route path="/poddisruptionbudgets/:name/:namespace/*" let:meta>
+    <PdbDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/priorityclasses">
+    <PriorityClassesList />
+  </Route>
+
+  <Route path="/priorityclasses/:name/*" let:meta>
+    <PriorityClassDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/runtimeclasses">
+    <RuntimeClassesList />
+  </Route>
+
+  <Route path="/runtimeclasses/:name/*" let:meta>
+    <RuntimeClassDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/leases">
+    <LeasesList />
+  </Route>
+
+  <Route path="/leases/:name/:namespace/*" let:meta>
+    <LeaseDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/mutatingwebhookconfigurations">
+    <MutatingWebhooksList />
+  </Route>
+
+  <Route path="/mutatingwebhookconfigurations/:name/*" let:meta>
+    <MutatingWebhookDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/validatingwebhookconfigurations">
+    <ValidatingWebhooksList />
+  </Route>
+
+  <Route path="/validatingwebhookconfigurations/:name/*" let:meta>
+    <ValidatingWebhookDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <!-- Network section resources -->
+  <Route path="/endpointslices">
+    <EndpointSlicesList />
+  </Route>
+
+  <Route path="/endpointslices/:name/:namespace/*" let:meta>
+    <EndpointSliceDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/endpoints">
+    <EndpointsList />
+  </Route>
+
+  <Route path="/endpoints/:name/:namespace/*" let:meta>
+    <EndpointDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/ingressclasses">
+    <IngressClassesList />
+  </Route>
+
+  <Route path="/ingressclasses/:name/*" let:meta>
+    <IngressClassDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/networkpolicies">
+    <NetworkPoliciesList />
+  </Route>
+
+  <Route path="/networkpolicies/:name/:namespace/*" let:meta>
+    <NetworkPolicyDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <!-- Storage section resources -->
+  <Route path="/persistentvolumes">
+    <PvsList />
+  </Route>
+
+  <Route path="/persistentvolumes/:name/*" let:meta>
+    <PvDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/storageclasses">
+    <StorageClassesList />
+  </Route>
+
+  <Route path="/storageclasses/:name/*" let:meta>
+    <StorageClassDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <!-- Events -->
+  <Route path="/events">
+    <EventsStandaloneList />
+  </Route>
+
+  <Route path="/events/:name/:namespace/*" let:meta>
+    <EventStandaloneDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <!-- Access Control resources -->
+  <Route path="/serviceaccounts">
+    <ServiceAccountsList />
+  </Route>
+
+  <Route path="/serviceaccounts/:name/:namespace/*" let:meta>
+    <ServiceAccountDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/clusterroles">
+    <ClusterRolesList />
+  </Route>
+
+  <Route path="/clusterroles/:name/*" let:meta>
+    <ClusterRoleDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/roles">
+    <RolesList />
+  </Route>
+
+  <Route path="/roles/:name/:namespace/*" let:meta>
+    <RoleDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/clusterrolebindings">
+    <ClusterRoleBindingsList />
+  </Route>
+
+  <Route path="/clusterrolebindings/:name/*" let:meta>
+    <ClusterRoleBindingDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/rolebindings">
+    <RoleBindingsList />
+  </Route>
+
+  <Route path="/rolebindings/:name/:namespace/*" let:meta>
+    <RoleBindingDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <!-- Workloads: DaemonSets, StatefulSets, ReplicaSets -->
+  <Route path="/daemonsets">
+    <DaemonSetsList />
+  </Route>
+
+  <Route path="/daemonsets/:name/:namespace/*" let:meta>
+    <DaemonSetDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/statefulsets">
+    <StatefulSetsList />
+  </Route>
+
+  <Route path="/statefulsets/:name/:namespace/*" let:meta>
+    <StatefulSetDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/replicasets">
+    <ReplicaSetsList />
+  </Route>
+
+  <Route path="/replicasets/:name/:namespace/*" let:meta>
+    <ReplicaSetDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <!-- Gateway API resources -->
+  <Route path="/httproutes">
+    <HttpRoutesList />
+  </Route>
+
+  <Route path="/httproutes/:name/:namespace/*" let:meta>
+    <HttpRouteDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/gateways">
+    <GatewaysList />
+  </Route>
+
+  <Route path="/gateways/:name/:namespace/*" let:meta>
+    <GatewayDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/gatewayclasses">
+    <GatewayClassesList />
+  </Route>
+
+  <Route path="/gatewayclasses/:name/*" let:meta>
+    <GatewayClassDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/customresourcedefinitions">
+    <CustomResourceDefinitionsList />
+  </Route>
+
+  <Route path="/customresourcedefinitions/:name/*" let:meta>
+    <CustomResourceDefinitionDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <!-- Custom Resource Instances -->
+  <Route path="/customresources/:group/:version/:plural" let:meta>
+    <CustomResourceInstancesList
+      group={decodeURIComponent(meta.params.group)}
+      version={decodeURIComponent(meta.params.version)}
+      plural={decodeURIComponent(meta.params.plural)} />
+  </Route>
+
+  <Route path="/customresources/:group/:version/:plural/:name/:namespace/*" let:meta>
+    <CustomResourceInstanceDetails
+      group={decodeURIComponent(meta.params.group)}
+      version={decodeURIComponent(meta.params.version)}
+      plural={decodeURIComponent(meta.params.plural)}
+      name={decodeURIComponent(meta.params.name)}
+      namespace={decodeURIComponent(meta.params.namespace)} />
   </Route>
 </div>
