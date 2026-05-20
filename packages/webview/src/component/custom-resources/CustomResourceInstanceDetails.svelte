@@ -31,6 +31,8 @@ import { Navigator } from '/@/navigation/navigator';
 import KubeIcon from '/@/component/icons/KubeIcon.svelte';
 import StateChange from '/@/component/objects/StateChange.svelte';
 import MonacoEditor from '/@/component/editor/MonacoEditor.svelte';
+import EditYAML from '/@/component/editor/EditYAML.svelte';
+import { stringify } from 'yaml';
 import Route from '/@/Route.svelte';
 import CustomResourceInstanceDetailsSummary from './CustomResourceInstanceDetailsSummary.svelte';
 
@@ -55,6 +57,21 @@ let timer: ReturnType<typeof setInterval> | undefined = undefined;
 
 const simplifiedObject = $derived(
   object ? { ...object, metadata: { ...object.metadata, managedFields: undefined } } : undefined,
+);
+
+const editableObject = $derived(
+  object
+    ? {
+        ...object,
+        metadata: {
+          name: object.metadata?.name,
+          namespace: object.metadata?.namespace,
+          labels: object.metadata?.labels,
+          annotations: object.metadata?.annotations,
+        },
+        status: undefined,
+      }
+    : undefined,
 );
 
 const listUrl = $derived(`/customresources/${encodeURIComponent(group)}/${encodeURIComponent(version)}/${encodeURIComponent(plural)}`);
@@ -115,6 +132,10 @@ onDestroy(() => {
         title="Inspect"
         selected={navigator.isTabSelected($router.path, 'inspect')}
         url={navigator.getTabUrl($router.path, 'inspect')} />
+      <Tab
+        title="Patch"
+        selected={navigator.isTabSelected($router.path, 'patch')}
+        url={navigator.getTabUrl($router.path, 'patch')} />
     {/snippet}
     {#snippet contentSnippet()}
       <Route path="/summary">
@@ -125,6 +146,11 @@ onDestroy(() => {
       <Route path="/inspect">
         {#if simplifiedObject}
           <MonacoEditor content={JSON.stringify(simplifiedObject, undefined, 2)} language="json" />
+        {/if}
+      </Route>
+      <Route path="/patch">
+        {#if editableObject}
+          <EditYAML content={stringify(editableObject)} />
         {/if}
       </Route>
     {/snippet}

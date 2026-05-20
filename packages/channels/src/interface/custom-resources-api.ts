@@ -18,6 +18,15 @@
 
 import type { KubernetesObject } from '@kubernetes/client-node';
 
+export interface DiscoveredResource {
+  group: string;
+  version: string;
+  kind: string;
+  plural: string;
+  namespaced: boolean;
+}
+
 export interface CustomResourcesApi {
   listInstances(group: string, version: string, plural: string, namespace?: string): Promise<KubernetesObject[]>;
+  discoverApiResources(groupSuffix: string): Promise<DiscoveredResource[]>;
 }
