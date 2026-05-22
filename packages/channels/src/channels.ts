@@ -37,6 +37,7 @@ import type { UpdateResourceInfo } from './model/update-resource-info';
 import type { OpenDialogApi } from './interface/open-dialog-api';
 import type { OpenDialogResult } from './model/open-dialog-result';
 import type { TelemetryApi } from '/@/interface/telemetry-api';
+import type { CustomResourcesApi } from './interface/custom-resources-api';
 import { createRpcChannel } from '@kubernetes-dashboard/rpc';
 import type {
   ContextsHealthsInfo,
@@ -52,6 +53,7 @@ export const API_PORT_FORWARD = createRpcChannel<PortForwardApi>('PortForwardApi
 export const API_NAVIGATION = createRpcChannel<NavigationApi>('NavigationApi');
 export const API_TELEMETRY = createRpcChannel<TelemetryApi>('TelemetryApi');
 export const API_OPEN_DIALOG = createRpcChannel<OpenDialogApi>('OpenDialogApi');
+export const API_CUSTOM_RESOURCES = createRpcChannel<CustomResourcesApi>('CustomResourcesApi');
 
 // Broadcast events (sent by extension and received by the webview)
 export const RESOURCES_COUNT = createRpcChannel<ResourcesCountInfo>('ResourcesCount');

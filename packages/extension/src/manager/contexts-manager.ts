@@ -73,6 +73,7 @@ import { ServicesResourceFactory } from '/@/resources/services-resource-factory.
 import { inject, injectable } from 'inversify';
 import { NamespacesResourceFactory } from '/@/resources/namespaces-resource-factory.js';
 import { EndpointSlicesResourceFactory } from '/@/resources/endpoint-slices-resource-factory.js';
+import { CustomResourceDefinitionsResourceFactory } from '/@/resources/customresourcedefinitions-resource-factory.js';
 import { parseAllDocuments, stringify, type Tags } from 'yaml';
 import { writeFile } from 'node:fs/promises';
 import { ConnectOptions, ContextPermission, ResourceCount } from '@podman-desktop/kubernetes-dashboard-extension-api';
@@ -174,6 +175,7 @@ export class ContextsManager implements ContextsApi {
       new RoutesResourceFactory(this),
       new SecretsResourceFactory(),
       new ServicesResourceFactory(),
+      new CustomResourceDefinitionsResourceFactory(),
     ];
   }
 

@@ -39,6 +39,8 @@ import { cronjobsModule } from '/@/component/cronjobs/_cronjobs-module';
 import { podsModule } from '/@/component/pods/_pods-module';
 import { streamsModule } from '/@/stream/stream-module';
 import { annotationsModule } from '/@/annotations/_annotations-module';
+import { crdsModule } from '/@/component/crds/_crds-module';
+import { customResourcesModule } from '/@/component/custom-resources/_custom-resources-module';
 
 export class InversifyBinding {
   #container: Container | undefined;
@@ -72,6 +74,8 @@ export class InversifyBinding {
     await this.#container.load(cronjobsModule);
     await this.#container.load(podsModule);
     await this.#container.load(annotationsModule);
+    await this.#container.load(crdsModule);
+    await this.#container.load(customResourcesModule);
 
     return this.#container;
   }

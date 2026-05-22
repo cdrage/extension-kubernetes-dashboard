@@ -26,6 +26,10 @@ import CronJobDetails from './component/cronjobs/CronJobDetails.svelte';
 import PodDetails from './component/pods/PodDetails.svelte';
 import PortForwardingList from './component/port-forward/PortForwardingList.svelte';
 import KubeApplyYAML from './component/apply/KubeApplyYAML.svelte';
+import CustomResourceDefinitionsList from './component/crds/CustomResourceDefinitionsList.svelte';
+import CustomResourceDefinitionDetails from './component/crds/CustomResourceDefinitionDetails.svelte';
+import CustomResourceInstancesList from './component/custom-resources/CustomResourceInstancesList.svelte';
+import CustomResourceInstanceDetails from './component/custom-resources/CustomResourceInstanceDetails.svelte';
 // import globally the monaco environment
 import './monaco-environment';
 import type { TinroRouteMeta } from 'tinro';
@@ -138,5 +142,37 @@ const { meta }: Props = $props();
 
   <Route path="/applyYaml">
     <KubeApplyYAML />
+  </Route>
+
+  <Route path="/customresourcedefinitions">
+    <CustomResourceDefinitionsList />
+  </Route>
+
+  <Route path="/customresourcedefinitions/:name/*" let:meta>
+    <CustomResourceDefinitionDetails name={decodeURI(meta.params.name)} />
+  </Route>
+
+  <Route path="/customresources/:group/:version/:plural" let:meta>
+    <CustomResourceInstancesList
+      group={decodeURIComponent(meta.params.group)}
+      version={decodeURIComponent(meta.params.version)}
+      plural={decodeURIComponent(meta.params.plural)} />
+  </Route>
+
+  <Route path="/customresources/:group/:version/:plural/:name/:namespace/*" let:meta>
+    <CustomResourceInstanceDetails
+      group={decodeURIComponent(meta.params.group)}
+      version={decodeURIComponent(meta.params.version)}
+      plural={decodeURIComponent(meta.params.plural)}
+      name={decodeURIComponent(meta.params.name)}
+      namespace={decodeURIComponent(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/customresources/:group/:version/:plural/:name/*" let:meta>
+    <CustomResourceInstanceDetails
+      group={decodeURIComponent(meta.params.group)}
+      version={decodeURIComponent(meta.params.version)}
+      plural={decodeURIComponent(meta.params.plural)}
+      name={decodeURIComponent(meta.params.name)} />
   </Route>
 </div>
