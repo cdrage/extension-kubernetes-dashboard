@@ -11,13 +11,16 @@ import {
   faPuzzlePiece,
   faServer,
 } from '@fortawesome/free-solid-svg-icons';
+import { faRedhat } from '@fortawesome/free-brands-svg-icons';
 import { getContext, onDestroy, onMount } from 'svelte';
 import type { Unsubscriber } from 'svelte/store';
 import type { KubernetesObject } from '@kubernetes/client-node';
 import { Navigator } from '/@/navigation/navigator';
 import { DependencyAccessor } from '/@/inject/dependency-accessor';
 import { States } from '/@/state/states';
-import type { ContextResourceItems } from '@kubernetes-dashboard/channels';
+import { Remote } from '/@/remote/remote';
+import { API_CUSTOM_RESOURCES } from '@kubernetes-dashboard/channels';
+import type { ContextResourceItems, CustomResourcesApi, DiscoveredResource } from '@kubernetes-dashboard/channels';
 import kubernetesIcon from '/@/kubernetes-icon.png';
 
 interface Props {
@@ -31,6 +34,7 @@ const navigator = dependencyAccessor.get<Navigator>(Navigator);
 
 const states = getContext<States>(States);
 const updateResource = states.stateUpdateResourceInfoUI;
+const currentContext = states.stateCurrentContextInfoUI;
 
 let unsubscribers: Unsubscriber[] = [];
 
@@ -90,6 +94,7 @@ const crdGroups = $derived.by((): CrdGroup[] => {
   }
 
   return Object.entries(groupMap)
+    .filter(([group]) => !group.endsWith('.openshift.io'))
     .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([group, crds]) => ({
       group,
@@ -101,6 +106,35 @@ function customResourceUrl(group: string, version: string, plural: string): stri
   return `/customresources/${encodeURIComponent(group)}/${encodeURIComponent(version)}/${encodeURIComponent(plural)}`;
 }
 
+const remote = getContext<Remote>(Remote);
+const customResourcesApi = remote.getProxy<CustomResourcesApi>(API_CUSTOM_RESOURCES);
+
+interface OpenShiftGroup {
+  group: string;
+  resources: DiscoveredResource[];
+}
+
+let openshiftGroups = $state<OpenShiftGroup[]>([]);
+
+async function discoverOpenShiftResources(): Promise<void> {
+  try {
+    const resources = await customResourcesApi.discoverApiResources('.openshift.io');
+    const groupMap: Record<string, DiscoveredResource[]> = {};
+    for (const r of resources) {
+      if (!groupMap[r.group]) groupMap[r.group] = [];
+      groupMap[r.group].push(r);
+    }
+    openshiftGroups = Object.entries(groupMap)
+      .toSorted(([a], [b]) => a.localeCompare(b))
+      .map(([group, res]) => ({
+        group,
+        resources: res.toSorted((a, b) => a.kind.localeCompare(b.kind)),
+      }));
+  } catch {
+    openshiftGroups = [];
+  }
+}
+
 onMount(() => {
   unsubscribers.push(
     updateResource.subscribe({
@@ -108,6 +142,7 @@ onMount(() => {
       resourceName: 'customresourcedefinitions',
     }),
   );
+  unsubscribers.push(currentContext.subscribe());
 });
 
 onDestroy(() => {
@@ -167,6 +202,7 @@ let configExpanded = $state(initExpanded('config', configUrls));
 let networkExpanded = $state(initExpanded('network', networkUrls));
 let storageExpanded = $state(initExpanded('storage', storageUrls));
 let customResourcesExpanded = $state(initExpandedByKey('customResources'));
+let openshiftExpanded = $state(initExpandedByKey('openshift'));
 
 function initExpandedByKey(key: string): boolean {
   const saved = loadExpanded();
@@ -216,6 +252,16 @@ $effect(() => {
 });
 $effect(() => {
   saveExpanded('customResources', customResourcesExpanded);
+});
+$effect(() => {
+  saveExpanded('openshift', openshiftExpanded);
+});
+$effect(() => {
+  if (currentContext?.data?.contextName) {
+    discoverOpenShiftResources();
+  } else {
+    openshiftGroups = [];
+  }
 });
 </script>
 
@@ -365,6 +411,40 @@ $effect(() => {
                   child={true}
                   selected={url === customResourceUrl(crdGroup.group, crd.version, crd.plural)}
                   href={customResourceUrl(crdGroup.group, crd.version, crd.plural)} />
+              {/each}
+            </div>
+          {/if}
+        {/each}
+      {/if}
+    {/if}
+
+    <!-- OpenShift section (discovered from API) -->
+    {#if openshiftGroups.length > 0}
+      <SettingsNavItem
+        title="OpenShift"
+        icon={faRedhat}
+        section={true}
+        bind:expanded={openshiftExpanded}
+        selected={false}
+        href="#" />
+      {#if openshiftExpanded}
+        {#each openshiftGroups as osGroup (osGroup.group)}
+          <SettingsNavItem
+            title={osGroup.group}
+            child={true}
+            section={true}
+            expanded={crdGroupExpandState[osGroup.group] ?? false}
+            onClick={(): void => toggleCrdGroup(osGroup.group)}
+            selected={false}
+            href="#" />
+          {#if crdGroupExpandState[osGroup.group]}
+            <div class="pl-3">
+              {#each osGroup.resources as res (res.plural)}
+                <SettingsNavItem
+                  title={res.kind}
+                  child={true}
+                  selected={url === customResourceUrl(res.group, res.version, res.plural)}
+                  href={customResourceUrl(res.group, res.version, res.plural)} />
               {/each}
             </div>
           {/if}

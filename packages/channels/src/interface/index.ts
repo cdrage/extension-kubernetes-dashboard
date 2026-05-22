@@ -25,12 +25,13 @@ import { type SubscribeApi } from './subscribe-api';
 import { type SystemApi } from './system-api';
 import { type NavigationApi } from './navigation-api';
 import { type TelemetryApi } from './telemetry-api';
-import { type CustomResourcesApi } from './custom-resources-api';
+import { type CustomResourcesApi, type DiscoveredResource } from './custom-resources-api';
 
 export type {
   AppliedResource,
   ContextsApi,
   CustomResourcesApi,
+  DiscoveredResource,
   OpenDialogApi,
   PodLogsApi,
   PodTerminalsApi,
