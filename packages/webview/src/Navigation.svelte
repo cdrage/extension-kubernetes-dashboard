@@ -258,7 +258,7 @@ $effect(() => {
 });
 $effect(() => {
   if (currentContext?.data?.contextName) {
-    discoverOpenShiftResources();
+    discoverOpenShiftResources().catch(console.warn);
   } else {
     openshiftGroups = [];
   }
