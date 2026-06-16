@@ -17,9 +17,9 @@
  ***********************************************************************/
 
 import type { Component } from 'svelte';
-import type { IconDefinition } from '@fortawesome/free-solid-svg-icons';
 
 import CronJobIcon from './CronJobIcon.svelte';
+import EventIcon from './EventIcon.svelte';
 import DeploymentIcon from './DeploymentIcon.svelte';
 import IngressRouteIcon from './IngressRouteIcon.svelte';
 import JobIcon from './JobIcon.svelte';
@@ -32,7 +32,7 @@ import ConfigMapIcon from './ConfigMapIcon.svelte';
 import SecretIcon from './SecretIcon.svelte';
 import ConfigMapSecretIcon from './ConfigMapSecretIcon.svelte';
 
-export const icon: Record<string, Component | IconDefinition> = {
+export const icon: Record<string, Component> = {
   ConfigMap: ConfigMapIcon,
   Secret: SecretIcon,
   ConfigMapSecret: ConfigMapSecretIcon,
@@ -49,4 +49,5 @@ export const icon: Record<string, Component | IconDefinition> = {
   DaemonSet: DeploymentIcon,
   StatefulSet: DeploymentIcon,
   ReplicaSet: DeploymentIcon,
+  Event: EventIcon,
 };

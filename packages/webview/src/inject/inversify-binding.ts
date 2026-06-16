@@ -42,6 +42,7 @@ import { annotationsModule } from '/@/annotations/_annotations-module';
 import { daemonSetsModule } from '/@/component/daemonsets/_daemonsets-module';
 import { statefulSetsModule } from '/@/component/statefulsets/_statefulsets-module';
 import { replicaSetsModule } from '/@/component/replicasets/_replicasets-module';
+import { eventsStandaloneModule } from '/@/component/events-standalone/_events-standalone-module';
 
 export class InversifyBinding {
   #container: Container | undefined;
@@ -78,6 +79,7 @@ export class InversifyBinding {
     await this.#container.load(daemonSetsModule);
     await this.#container.load(statefulSetsModule);
     await this.#container.load(replicaSetsModule);
+    await this.#container.load(eventsStandaloneModule);
 
     return this.#container;
   }

@@ -2,6 +2,7 @@
 import type { TinroRouteMeta } from 'tinro';
 import { SettingsNavItem } from '@podman-desktop/ui-svelte';
 import {
+  faBolt,
   faCubes,
   faDatabase,
   faGear,
@@ -223,5 +224,11 @@ $effect(() => {
       icon={faLayerGroup}
       selected={url === navigator.kubernetesResourcesURL('Namespace')}
       href={navigator.kubernetesResourcesURL('Namespace')} />
+
+    <SettingsNavItem
+      title="Events"
+      icon={faBolt}
+      selected={url === navigator.kubernetesResourcesURL('Event')}
+      href={navigator.kubernetesResourcesURL('Event')} />
   </div>
 </nav>

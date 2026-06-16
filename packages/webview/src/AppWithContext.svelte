@@ -32,6 +32,8 @@ import StatefulSetsList from '/@/component/statefulsets/StatefulSetsList.svelte'
 import StatefulSetDetails from '/@/component/statefulsets/StatefulSetDetails.svelte';
 import ReplicaSetsList from '/@/component/replicasets/ReplicaSetsList.svelte';
 import ReplicaSetDetails from '/@/component/replicasets/ReplicaSetDetails.svelte';
+import EventsStandaloneList from './component/events-standalone/EventsStandaloneList.svelte';
+import EventStandaloneDetails from './component/events-standalone/EventStandaloneDetails.svelte';
 // import globally the monaco environment
 import './monaco-environment';
 import type { TinroRouteMeta } from 'tinro';
@@ -168,5 +170,13 @@ const { meta }: Props = $props();
 
   <Route path="/replicasets/:name/:namespace/*" let:meta>
     <ReplicaSetDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
+  </Route>
+
+  <Route path="/events">
+    <EventsStandaloneList />
+  </Route>
+
+  <Route path="/events/:name/:namespace/*" let:meta>
+    <EventStandaloneDetails name={decodeURI(meta.params.name)} namespace={decodeURI(meta.params.namespace)} />
   </Route>
 </div>
