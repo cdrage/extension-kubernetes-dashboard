@@ -62,6 +62,7 @@ const row = new TableRow<ServiceAccountUI>({ selectable: (_obj): boolean => true
     {
       resource: 'serviceaccounts',
       transformer: serviceAccountHelper.getServiceAccountUI.bind(serviceAccountHelper),
+      transformer: serviceAccountHelper.getServiceAccountUI,
     },
   ]}
   singular="service account"
