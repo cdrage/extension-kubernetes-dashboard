@@ -75,3 +75,6 @@ export const POD_LOGS = createRpcChannel<PodLogsChunk>('PodLogs');
 
 export const API_POD_TERMINALS = createRpcChannel<PodTerminalsApi>('PodTerminalsApi');
 export const POD_TERMINAL_DATA = createRpcChannel<PodTerminalChunk>('PodTerminalData');
+
+// MCP follow-UI navigation (extension tells webview which route to display)
+export const NAVIGATE = createRpcChannel<string>('Navigate');

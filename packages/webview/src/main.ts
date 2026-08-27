@@ -17,9 +17,10 @@
  ***********************************************************************/
 
 import { RpcBrowser } from '@kubernetes-dashboard/rpc';
+import { router } from 'tinro';
 
 import { InversifyBinding } from '/@/inject/inversify-binding';
-import { IDisposable } from '@kubernetes-dashboard/channels';
+import { IDisposable, NAVIGATE } from '@kubernetes-dashboard/channels';
 import { States } from '/@/state/states';
 import { StateObject } from '/@/state/util/state-object.svelte';
 import type { WebviewApi } from '@podman-desktop/webview-api';
@@ -43,6 +44,10 @@ export class Main implements IDisposable {
     const webviewApi = acquirePodmanDesktopApi();
 
     const rpcBrowser: RpcBrowser = new RpcBrowser(window, webviewApi);
+
+    rpcBrowser.on(NAVIGATE, (path: string) => {
+      router.goto(path);
+    });
 
     const inversifyBinding = new InversifyBinding(rpcBrowser, webviewApi);
     const container = await inversifyBinding.initBindings();

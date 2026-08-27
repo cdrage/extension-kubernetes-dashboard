@@ -21,8 +21,7 @@ import { commands, extensions } from '@podman-desktop/api';
 
 const EXTENSION_ID = 'kubernetes-dashboard';
 
-// Maps kubectl resource names (singular, plural, short) to webview routes.
-// The webview navigator uses plural lowercase for its URL paths.
+// Maps kubectl resource names (singular, plural, short) to webview list routes.
 const RESOURCE_ROUTES: Record<string, string> = {
   pod: 'pods',
   pods: 'pods',
@@ -124,8 +123,48 @@ const RESOURCE_ROUTES: Record<string, string> = {
   ev: 'events',
 };
 
-// Minimal shape of the MCP CallToolResult passed to navigation handlers.
-// Only the fields we read are declared; the full type lives in @modelcontextprotocol/sdk.
+// Resources that share a list route and need a sub-kind segment in detail URLs.
+//
+//   List:   /configmapsSecrets
+//   Detail: /configmapsSecrets/configmap/my-cm/default/summary
+const DETAIL_PREFIX: Record<string, string> = {
+  configmap: 'configmap',
+  configmaps: 'configmap',
+  cm: 'configmap',
+  secret: 'secret',
+  secrets: 'secret',
+  ingress: 'ingress',
+  ingresses: 'ingress',
+  ing: 'ingress',
+  route: 'route',
+  routes: 'route',
+};
+
+// Cluster-scoped resources have no namespace segment in detail URLs.
+//
+//   Namespaced:     /pods/nginx/default/summary
+//   Cluster-scoped: /nodes/node-1/summary
+const CLUSTER_SCOPED = new Set([
+  'node',
+  'nodes',
+  'no',
+  'namespace',
+  'namespaces',
+  'ns',
+  'persistentvolume',
+  'persistentvolumes',
+  'pv',
+  'storageclass',
+  'storageclasses',
+  'sc',
+  'ingressclass',
+  'ingressclasses',
+  'clusterrole',
+  'clusterroles',
+  'clusterrolebinding',
+  'clusterrolebindings',
+]);
+
 interface ToolResultContent {
   type: string;
   text?: string;
@@ -134,36 +173,71 @@ interface ToolResult {
   content?: ToolResultContent[];
 }
 
-// Parse kubectl args string to extract the resource kind.
-// Handles patterns like "get pods", "describe pod nginx", "delete deployment foo".
-// Returns undefined for file-based commands ("apply -f ...") where the kind
-// lives inside the YAML, not in the CLI args.
-function parseResourceKind(argsStr: string): string | undefined {
-  const args = argsStr.split(/\s+/).filter(a => a.length > 0);
+interface ParsedKubectl {
+  subcommand: string;
+  kind: string;
+  name?: string;
+}
 
-  // Skip flags and subcommand to find the resource kind
-  let i = 0;
+interface ParsedOutput {
+  kind: string;
+  name: string;
+  verb: string;
+}
 
-  // Skip the kubectl subcommand (get, describe, delete, create, apply, etc.)
-  if (i < args.length && !args[i]!.startsWith('-')) {
-    i++;
+// Extract -n / --namespace value from tokenized kubectl args.
+function parseNamespace(tokens: string[]): string | undefined {
+  for (let i = 0; i < tokens.length; i++) {
+    if ((tokens[i] === '-n' || tokens[i] === '--namespace') && i + 1 < tokens.length) {
+      return tokens[i + 1];
+    }
+    const eq = tokens[i]!.match(/^--namespace=(.+)/);
+    if (eq?.[1]) {
+      return eq[1];
+    }
   }
+  return undefined;
+}
 
-  // "apply" always uses -f; "create -f" also has no inline kind.
-  // Both fall through to output-based parsing in the navigation handler.
-  if (args[0] === 'apply') {
+// Parse kubectl args to extract subcommand, resource kind, and resource name.
+//
+// Handles:
+//   get pods                    -> { subcommand: "get", kind: "pods" }
+//   get pod nginx               -> { subcommand: "get", kind: "pod", name: "nginx" }
+//   describe pod/nginx          -> { subcommand: "describe", kind: "pod", name: "nginx" }
+//   rollout status deploy/nginx -> { subcommand: "rollout", kind: "deploy", name: "nginx" }
+//
+// Returns undefined for file-based commands (apply, create -f) where the kind
+// is inside the YAML file.
+function parseKubectl(tokens: string[]): ParsedKubectl | undefined {
+  if (tokens.length === 0) {
     return undefined;
   }
-  if (args[0] === 'create' && argsStr.includes('-f')) {
+
+  const subcommand = tokens[0]!;
+
+  if (subcommand === 'apply') {
+    return undefined;
+  }
+  if (subcommand === 'create' && tokens.includes('-f')) {
     return undefined;
   }
 
-  // Find first non-flag argument after the subcommand
-  while (i < args.length) {
-    const arg = args[i]!;
-    if (arg.startsWith('-')) {
-      // Skip flag and its value if it's a key=value flag
-      if (!arg.includes('=') && i + 1 < args.length && !args[i + 1]!.startsWith('-')) {
+  // Compound commands ("rollout status", "set image") have a sub-action to skip
+  let startIdx = 1;
+  if (subcommand === 'rollout' || subcommand === 'set' || subcommand === 'auth') {
+    startIdx = 2;
+  }
+
+  let kind: string | undefined;
+  let name: string | undefined;
+  let i = startIdx;
+
+  while (i < tokens.length) {
+    const token = tokens[i]!;
+
+    if (token.startsWith('-')) {
+      if (!token.includes('=') && i + 1 < tokens.length && !tokens[i + 1]!.startsWith('-')) {
         i += 2;
       } else {
         i++;
@@ -171,68 +245,143 @@ function parseResourceKind(argsStr: string): string | undefined {
       continue;
     }
 
-    // This should be the resource kind, possibly as "kind/name"
-    const kindPart = arg.split('/')[0]!.toLowerCase();
-    return kindPart;
+    if (!kind) {
+      const parts = token.split('/');
+      const candidate = parts[0]!.toLowerCase();
+      if (!RESOURCE_ROUTES[candidate]) {
+        i++;
+        continue;
+      }
+      kind = candidate;
+      if (parts.length > 1 && parts[1]) {
+        name = parts[1];
+      }
+    } else if (!name) {
+      name = token;
+    } else {
+      break;
+    }
+
+    i++;
   }
 
-  return undefined;
-}
-
-// Extract the resource kind from kubectl text output.
-//
-// kubectl prints a stable "kind[.apigroup]/name verb" line for mutating commands:
-//   pod/nginx created
-//   deployment.apps/nginx-deploy configured
-//   service/bar deleted
-//   configmap/my-config unchanged
-//
-// This covers "apply -f" and "create -f" where the kind is inside the YAML
-// file, not in the CLI args. The regex strips the optional API group suffix
-// (for example ".apps") and returns the base kind in lowercase.
-function parseResourceFromOutput(output: string): string | undefined {
-  const match = /^(\w+)(?:\.\S+)?\/\S+\s+\w+/m.exec(output);
-  if (!match?.[1]) {
+  if (!kind) {
     return undefined;
   }
-  return match[1].toLowerCase();
+  return { subcommand, kind, name };
+}
+
+// Extract kind, name, and verb from kubectl mutating-command output.
+//
+//   pod/nginx created           -> { kind: "pod", name: "nginx", verb: "created" }
+//   deployment.apps/foo deleted -> { kind: "deployment", name: "foo", verb: "deleted" }
+function parseOutputResource(output: string): ParsedOutput | undefined {
+  const match = /^(\w+)(?:\.\S+)?\/(\S+)\s+(\w+)/m.exec(output);
+  if (!match?.[1] || !match?.[2] || !match?.[3]) {
+    return undefined;
+  }
+  return { kind: match[1].toLowerCase(), name: match[2], verb: match[3] };
+}
+
+// Parse kind, metadata.name, and metadata.namespace from a Kubernetes YAML manifest.
+function parseYamlMeta(yaml: string): { kind?: string; name?: string; namespace?: string } {
+  const kind = /^kind:\s*(\S+)/m.exec(yaml)?.[1]?.toLowerCase();
+
+  // Match name/namespace as direct children of "metadata:" (at 2-space indent)
+  // while skipping deeper-nested fields like labels or annotations.
+  const name = /^metadata:\s*\n(?:[ \t]+.*\n)*?  name:\s*(\S+)/m.exec(yaml)?.[1];
+  const namespace = /^metadata:\s*\n(?:[ \t]+.*\n)*?  namespace:\s*(\S+)/m.exec(yaml)?.[1];
+
+  return { kind, name, namespace };
+}
+
+// Build a detail-page route for a specific resource.
+//
+//   ("pod", "nginx", "default")     -> "pods/nginx/default/summary"
+//   ("node", "node-1", undefined)   -> "nodes/node-1/summary"
+//   ("cm", "my-cm", "kube-system")  -> "configmapsSecrets/configmap/my-cm/kube-system/summary"
+//
+// Returns undefined when the route requires a namespace but none is provided.
+function buildDetailRoute(kind: string, name: string, namespace?: string): string | undefined {
+  const route = RESOURCE_ROUTES[kind];
+  if (!route) {
+    return undefined;
+  }
+
+  const prefix = DETAIL_PREFIX[kind];
+
+  if (CLUSTER_SCOPED.has(kind)) {
+    if (prefix) {
+      return `${route}/${prefix}/${name}/summary`;
+    }
+    return `${route}/${name}/summary`;
+  }
+
+  if (!namespace) {
+    return undefined;
+  }
+
+  if (prefix) {
+    return `${route}/${prefix}/${name}/${namespace}/summary`;
+  }
+  return `${route}/${name}/${namespace}/summary`;
 }
 
 function navigateDashboard(panel: WebviewPanel, route: string): void {
   panel.reveal();
-  panel.webview.postMessage({ channel: 'navigate', path: `/${route}` });
+  panel.webview.postMessage({ id: 'Navigate', body: `/${route}` });
 }
 
 let registered = false;
 let extensionWatcher: Disposable | undefined;
 
-// Attempt to register navigation handlers with the MCP extension.
-// Returns true on success, false if the MCP extension is not available yet.
 async function tryRegister(panel: WebviewPanel): Promise<boolean> {
-  // Navigation handler receives both the original tool args and the execution
-  // result. Two-stage lookup:
-  //   1. Try to extract the resource kind from the CLI args ("get pods", "delete svc foo")
-  //   2. If the kind is not in the args (for example "apply -f file.yaml"), fall back to
-  //      parsing the kubectl output text ("deployment.apps/nginx configured")
+  // kubectl navigation handler.
+  //
+  // Two-stage resolution:
+  //   1. Parse the resource kind, name, and namespace from CLI args
+  //   2. Fall back to parsing the kubectl output text (for apply -f / create -f)
+  //
+  // Single-resource operations navigate to the detail page when the name (and
+  // namespace for namespaced resources) are available.  Delete and list operations
+  // navigate to the list page.
   const navHandler = async (args: Record<string, unknown>, result: ToolResult): Promise<void> => {
     const argsStr = (args.args as string) ?? '';
+    const tokens = argsStr.split(/\s+/).filter(a => a.length > 0);
+    const namespace = parseNamespace(tokens);
 
-    // Stage 1: kind from CLI args
-    const kindFromArgs = parseResourceKind(argsStr);
-    if (kindFromArgs) {
-      const route = RESOURCE_ROUTES[kindFromArgs];
+    // Stage 1: parse from CLI args
+    const parsed = parseKubectl(tokens);
+    if (parsed) {
+      if (parsed.name && parsed.subcommand !== 'delete') {
+        const detail = buildDetailRoute(parsed.kind, parsed.name, namespace);
+        if (detail) {
+          navigateDashboard(panel, detail);
+          return;
+        }
+      }
+
+      const route = RESOURCE_ROUTES[parsed.kind];
       if (route) {
         navigateDashboard(panel, route);
         return;
       }
     }
 
-    // Stage 2: kind from kubectl output (covers apply/create -f)
+    // Stage 2: parse from kubectl output (covers apply -f, create -f)
     const outputText = result?.content?.[0];
     if (outputText?.type === 'text' && outputText.text) {
-      const kindFromOutput = parseResourceFromOutput(outputText.text);
-      if (kindFromOutput) {
-        const route = RESOURCE_ROUTES[kindFromOutput];
+      const output = parseOutputResource(outputText.text);
+      if (output) {
+        if (output.verb !== 'deleted') {
+          const detail = buildDetailRoute(output.kind, output.name, namespace);
+          if (detail) {
+            navigateDashboard(panel, detail);
+            return;
+          }
+        }
+
+        const route = RESOURCE_ROUTES[output.kind];
         if (route) {
           navigateDashboard(panel, route);
           return;
@@ -240,18 +389,43 @@ async function tryRegister(panel: WebviewPanel): Promise<boolean> {
       }
     }
 
-    // Final fallback: reveal the dashboard without navigating to a specific page
+    panel.reveal();
+  };
+
+  // kube_create_resources navigation handler.
+  //
+  // Parses the YAML manifest for kind, metadata.name, and metadata.namespace
+  // to navigate directly to the created resource.
+  const kubeCreateNav = async (args: Record<string, unknown>): Promise<void> => {
+    const yaml = (args.yaml as string) ?? '';
+    const meta = parseYamlMeta(yaml);
+
+    if (meta.kind && meta.name) {
+      const detail = buildDetailRoute(meta.kind, meta.name, meta.namespace);
+      if (detail) {
+        navigateDashboard(panel, detail);
+        return;
+      }
+    }
+
+    if (meta.kind) {
+      const route = RESOURCE_ROUTES[meta.kind];
+      if (route) {
+        navigateDashboard(panel, route);
+        return;
+      }
+    }
+
     panel.reveal();
   };
 
   try {
     await commands.executeCommand('mcp.registerTools', {
       extensionId: EXTENSION_ID,
+      prefix: 'ext_k8s',
       navigation: {
         kubectl: navHandler,
-        kube_create_resources: async (): Promise<void> => {
-          panel.reveal();
-        },
+        kube_create_resources: kubeCreateNav,
       },
     });
     registered = true;
