@@ -66,6 +66,7 @@ import type {
 } from '@podman-desktop/kubernetes-dashboard-extension-api';
 import { ApiSubscriber } from '/@/subscriber/api-subscriber';
 import { TelemetryApiImpl } from './manager/telemetry-api';
+import { registerMcpTools, unregisterMcpTools } from '/@/mcp-tools';
 
 export class DashboardExtension {
   #container: Container | undefined;
@@ -147,6 +148,8 @@ export class DashboardExtension {
       }
     });
 
+    registerMcpTools(panel, this.#extensionContext).catch(console.warn);
+
     return {
       getSubscriber: () => {
         const subscriber = new ApiSubscriber();
@@ -183,6 +186,7 @@ export class DashboardExtension {
 
   async deactivate(): Promise<void> {
     console.log('deactivating Kubernetes Dashboard extension');
+    await unregisterMcpTools();
   }
 
   private async createWebview(): Promise<WebviewPanel> {
