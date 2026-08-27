@@ -165,6 +165,41 @@ const CLUSTER_SCOPED = new Set([
   'clusterrolebindings',
 ]);
 
+// Priority ranking for multi-resource manifests.
+// Higher number = more likely the "main" resource the user cares about.
+//
+// Workloads first, then networking/storage, config, RBAC, cluster infra.
+// When kubectl output has multiple lines (apply -f multi-doc.yaml), or a
+// YAML string has multiple documents, the resource with the highest
+// priority is chosen for navigation.
+const RESOURCE_PRIORITY: Record<string, number> = {
+  deployment: 10,
+  statefulset: 10,
+  daemonset: 10,
+  job: 9,
+  cronjob: 9,
+  pod: 8,
+  replicaset: 7,
+  service: 6,
+  ingress: 6,
+  route: 6,
+  httproute: 6,
+  networkpolicy: 5,
+  persistentvolumeclaim: 5,
+  configmap: 4,
+  secret: 4,
+  serviceaccount: 3,
+  role: 2,
+  rolebinding: 2,
+  clusterrole: 2,
+  clusterrolebinding: 2,
+  namespace: 1,
+  node: 1,
+  persistentvolume: 1,
+  storageclass: 1,
+  ingressclass: 1,
+};
+
 interface ToolResultContent {
   type: string;
   text?: string;
@@ -271,28 +306,85 @@ function parseKubectl(tokens: string[]): ParsedKubectl | undefined {
   return { subcommand, kind, name };
 }
 
-// Extract kind, name, and verb from kubectl mutating-command output.
+// Extract kind, name, and verb from a single line of kubectl output.
 //
 //   pod/nginx created           -> { kind: "pod", name: "nginx", verb: "created" }
 //   deployment.apps/foo deleted -> { kind: "deployment", name: "foo", verb: "deleted" }
-function parseOutputResource(output: string): ParsedOutput | undefined {
-  const match = /^(\w+)(?:\.\S+)?\/(\S+)\s+(\w+)/m.exec(output);
+function parseOutputLine(line: string): ParsedOutput | undefined {
+  const match = /^(\w+)(?:\.\S+)?\/(\S+)\s+(\w+)/.exec(line);
   if (!match?.[1] || !match?.[2] || !match?.[3]) {
     return undefined;
   }
   return { kind: match[1].toLowerCase(), name: match[2], verb: match[3] };
 }
 
-// Parse kind, metadata.name, and metadata.namespace from a Kubernetes YAML manifest.
-function parseYamlMeta(yaml: string): { kind?: string; name?: string; namespace?: string } {
-  const kind = /^kind:\s*(\S+)/m.exec(yaml)?.[1]?.toLowerCase();
+// Scan all lines of kubectl output and return the highest-priority resource.
+//
+// Multi-resource output (from apply -f or create -f) lists one resource per line:
+//   serviceaccount/homepage configured
+//   secret/homepage-linkding-api configured
+//   deployment.apps/homepage configured      <-- priority 10, wins
+//   service/homepage configured
+function parseBestOutput(output: string): ParsedOutput | undefined {
+  let best: ParsedOutput | undefined;
+  let bestPriority = -1;
+
+  for (const line of output.split('\n')) {
+    const parsed = parseOutputLine(line);
+    if (!parsed) {
+      continue;
+    }
+
+    const priority = RESOURCE_PRIORITY[parsed.kind] ?? 0;
+    if (priority > bestPriority) {
+      best = parsed;
+      bestPriority = priority;
+    }
+  }
+
+  return best;
+}
+
+interface YamlMeta {
+  kind?: string;
+  name?: string;
+  namespace?: string;
+}
+
+// Parse kind, metadata.name, and metadata.namespace from a single YAML document.
+function parseOneYamlMeta(doc: string): YamlMeta {
+  const kind = /^kind:\s*(\S+)/m.exec(doc)?.[1]?.toLowerCase();
 
   // Match name/namespace as direct children of "metadata:" (at 2-space indent)
   // while skipping deeper-nested fields like labels or annotations.
-  const name = /^metadata:\s*\n(?:[ \t]+.*\n)*?  name:\s*(\S+)/m.exec(yaml)?.[1];
-  const namespace = /^metadata:\s*\n(?:[ \t]+.*\n)*?  namespace:\s*(\S+)/m.exec(yaml)?.[1];
+  const name = /^metadata:\s*\n(?:[ \t]+.*\n)*?  name:\s*(\S+)/m.exec(doc)?.[1];
+  const namespace = /^metadata:\s*\n(?:[ \t]+.*\n)*?  namespace:\s*(\S+)/m.exec(doc)?.[1];
 
   return { kind, name, namespace };
+}
+
+// Parse a multi-document YAML string and return metadata from the
+// highest-priority resource.
+function parseYamlMeta(yaml: string): YamlMeta {
+  const documents = yaml.split(/^---\s*$/m);
+
+  let best: YamlMeta = {};
+  let bestPriority = -1;
+
+  for (const doc of documents) {
+    const meta = parseOneYamlMeta(doc);
+    if (!meta.kind) {
+      continue;
+    }
+
+    const priority = RESOURCE_PRIORITY[meta.kind] ?? 0;
+    if (priority > bestPriority) {
+      best = meta;
+      bestPriority = priority;
+    }
+  }
+
+  return best;
 }
 
 // Build a detail-page route for a specific resource.
@@ -371,7 +463,7 @@ async function tryRegister(panel: WebviewPanel): Promise<boolean> {
     // Stage 2: parse from kubectl output (covers apply -f, create -f)
     const outputText = result?.content?.[0];
     if (outputText?.type === 'text' && outputText.text) {
-      const output = parseOutputResource(outputText.text);
+      const output = parseBestOutput(outputText.text);
       if (output) {
         if (output.verb !== 'deleted') {
           const detail = buildDetailRoute(output.kind, output.name, namespace);
